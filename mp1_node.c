@@ -17,8 +17,8 @@ int NODECOUNT=0;
 int MEMCOUNT=0;
 
 #define T_GOSSIP 1
-#define T_FAIL 4
-#define T_CLEANUP 8
+#define T_FAIL 50
+#define T_CLEANUP 100
 /*
  *
  * Routines for introducer and current time.
@@ -124,6 +124,8 @@ void nodeloopops(member *node){
 				continue;
 			else if (memcmp(&node->addr,&node->memtable[randomNode].maddr,sizeof(address))==0)
 				continue;
+			else if (node->memtable[randomNode].tocleanup!=0)
+				continue;
 			else
 				break;
 
@@ -147,10 +149,12 @@ void nodeloopops(member *node){
 							printf("\nTime to set del bit for node %d",node->memtable[i].maddr.addr[0]);
 							node->memtable[i].tocleanup=1;
 						} else {
-							printf("\nTime to mark the node deleted %d",node->memtable[i].maddr.addr[0]);
-							node->memtable[i].tocleanup=2;
-							printf("\n remvoing");
-							logNodeRemove(&node->addr,&node->memtable[i].maddr);
+							if ( node->memtable[i].tocleanup != 2 ){
+								printf("\nTime to mark the node deleted %d",node->memtable[i].maddr.addr[0]);
+								node->memtable[i].tocleanup=2;
+								printf("\n remvoing node %d",node->memtable[i].maddr);
+								logNodeRemove(&node->addr,&node->memtable[i].maddr);
+							}
 						}
 					}
 
@@ -250,9 +254,11 @@ void Process_gossipmsg(void *env, char *data, int size)
 					if (getcurrtime() - memdata->lastupdatetime < T_FAIL ){
 						node->memtable[j].tocleanup=1;
 					} else {
-						node->memtable[j].tocleanup=2;
-						printf("\n REMOVING NODE %d",memdata->maddr.addr[0]);
-						logNodeRemove(&node->addr,&node->memtable[i].maddr);
+						if ( node->memtable[j].tocleanup != 2){
+							node->memtable[j].tocleanup=2;
+							printf("\n REMOVING NODE %d",memdata->maddr.addr[0]);
+							logNodeRemove(&node->addr,&node->memtable[i].maddr);
+						}
 					}
 				}
 				//break;
