@@ -1,0 +1,38 @@
+E	emulnet.h	/^struct EM{$/
+ENcleanup	emulnet.c	/^int ENcleanup(){$/
+ENinit	emulnet.c	/^void *ENinit(struct address *myaddr, short port, c/
+ENp2psend	emulnet.c	/^int ENp2psend(struct address *myaddr, struct addre/
+ENrecv	emulnet.c	/^int ENrecv(struct address *myaddr, int (* enq)(voi/
+LOG	log.c	/^void LOG(address *addr, char * str, ...){$/
+Lkupstatus	requests.h	/^enum Lkupstatus { RFULL,RQUEUED,RFAIL };$/
+Mapp	app.c	/^int main(int argc, char *argv[]){$/
+Msgtype	mp1_node.h	/^enum Msgtypes{$/
+address	nodeaddr.h	/^} address;$/
+checkmsgs	mp1_node.c	/^void checkmsgs(member *node){$/
+contains	Grader.sh	/^function contains () {$/
+dequeue	queue.c	/^void *dequeue(queue *q, int *sz){$/
+destroyqueue	queue.c	/^int destroyqueue(queue *q){$/
+en_msg	emulnet.h	/^} en_msg;$/
+enqueue	queue.c	/^int enqueue(queue *q, void *elt, int size){$/
+enqueue_wrppr	mp1_node.c	/^int enqueue_wrppr(void *env, char *buff, int size)/
+finishup_thisnode	mp1_node.c	/^int finishup_thisnode(member *node){$/
+getcurrtime	params.c	/^int getcurrtime(){$/
+getjoinaddr	mp1_node.c	/^address getjoinaddr(void){$/
+init_thisnode	mp1_node.c	/^int init_thisnode(member *thisnode, address *joina/
+initqueue	queue.c	/^int initqueue(queue *q){$/
+introduceselftogroup	mp1_node.c	/^int introduceselftogroup(member *node, address *jo/
+isnulladdr	mp1_node.c	/^int isnulladdr( address *addr){$/
+loginPrompt	submit.py	/^  (login, password) = loginPrompt()$/
+member	mp1_node.h	/^} member;$/
+membershiplist	mp1_node.h	/^} membershiplist;$/
+messagehdr	mp1_node.h	/^} messagehdr;$/
+nodeloop	mp1_node.c	/^void nodeloop(member *node){$/
+nodeloopops	mp1_node.c	/^void nodeloopops(member *node){$/
+nodestart	mp1_node.c	/^void nodestart(member *node, char *servaddrstr, sh/
+q_elt	queue.h	/^} q_elt;$/
+queue	queue.h	/^} queue;$/
+queuestatu	queue.h	/^enum queuestatus{QSUCCESS, QFULL, QEMPTY};$/
+recv_callback	mp1_node.c	/^int recv_callback(void *env, char *data, int size)/
+recvloop	mp1_node.c	/^int recvloop(member *node){$/
+setparams	params.c	/^void setparams(char *config_file){$/
+urlencode	submit.py	/^  data = urllib.urlencode(values)$/
