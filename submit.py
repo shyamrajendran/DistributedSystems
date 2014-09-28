@@ -20,7 +20,6 @@ import subprocess
 
 """"""""""""""""""""
 """"""""""""""""""""
-
 class NullDevice:
   def write(self, s):
     pass
@@ -51,7 +50,7 @@ def submit():
   # Attempt Submission with Challenge
   ch_resp = challengeResponse(login, password, ch)
 
-  subprocess.check_output(['./run.sh',partIdx])
+  output = subprocess.Popen(['sh', 'run.sh', str(partIdx)]).communicate()[0]
   (result, string) = submitSolution(login, ch_resp, sid, source(partIdx), \
                                   state, ch_aux)
 
@@ -108,11 +107,11 @@ def challengeResponse(email, passwd, challenge):
   
 def challenge_url():
   """Returns the challenge url."""
-  return "https://class.coursera.org/" + URL + "/assignment/challenge"
+  return URL_BASE + URL + "/assignment/challenge"
 
 def submit_url():
   """Returns the submission url."""
-  return "https://class.coursera.org/" + URL + "/assignment/submit"
+  return URL_BASE + URL + "/assignment/submit"
 
 def submitSolution(email_address, ch_resp, sid, output, state, ch_aux):
   """Submits a solution to the server. Returns (result, string)."""
@@ -122,7 +121,7 @@ def submitSolution(email_address, ch_resp, sid, output, state, ch_aux):
   values = { 'assignment_part_sid' : sid, \
              'email_address' : email_address, \
              'submission' : output_64_msg.get_payload(), \
-             #'submission_aux' : source_64_msg.get_payload(), \
+             'submission_aux' : output_64_msg.get_payload(), \
              'challenge_response' : ch_resp, \
              'state' : state \
            }
@@ -137,7 +136,7 @@ def submitSolution(email_address, ch_resp, sid, output, state, ch_aux):
 ## This collects the source code (just for logging purposes) 
 def source(partIdx):
   # open the file, get all lines
-  f = open(sourceFiles[partIdx])
+  f = open(outFiles[partIdx])
   src = f.read() 
   f.close()
   return src
@@ -148,7 +147,8 @@ def source(partIdx):
 
 # Make sure you change this string to the last segment of your class URL.
 # For example, if your URL is https://class.coursera.org/pgm-2012-001-staging, set it to "pgm-2012-001-staging".
-URL = 'cloudcomputing-001'
+URL = 'cs425-001'
+URL_BASE = "https://illinois.coursera.org/"
 
 # the "Identifier" you used when creating the part
 partIds = ['mp1_part1', 'mp1_part2', 'mp1_part3']

@@ -13,12 +13,12 @@
 #include "emulnet.h"
 #include "MPtemplate.h"
 #include "log.h"
-int NODECOUNT=0;
-int MEMCOUNT=0;
+int NODECOUNT=0; // this is the location on the initiator's membership table saving each other node's information
+int MEMCOUNT=0;  // this is to give global unique node number 
 
-#define T_GOSSIP 1
-#define T_FAIL 50
-#define T_CLEANUP 100
+#define T_GOSSIP 1 // Here the nodeloopops is called for every global time. But we can control by setting this T_GOSSIP
+#define T_FAIL 50  // Time after which the node marks the member as to be cleaned.
+#define T_CLEANUP 100 // Time after which the node marks the member as deleted.
 /*
  *
  * Routines for introducer and current time.
@@ -56,8 +56,8 @@ Received a JOINREQ (joinrequest) message.
 void Process_joinreq(void *env, char *data, int size)
 {
 
-	/* <your code goes in here> */
-   	// this function is only called by initiator for messages sent from different other nodes.
+	
+   	// This function is only called by the initiator for messages sent from different other nodes in the network.
 	// copy message into the membership list and send joinrep message type to the node from where it received the message
 	// env is the node on which it is called 
 	// data only contains the address of the sender
@@ -95,10 +95,7 @@ void Process_joinreq(void *env, char *data, int size)
 
 	}
 
-	//membershiplist *test=(membershiplist *) msg;
-
-printf("sending size of %d to node %d with address %d",msgsize,NODECOUNT,destaddr->addr[0]);
-    	MPp2psend(&node->addr, destaddr, (char *)msg, msgsize);
+   	MPp2psend(&node->addr, destaddr, (char *)msg, msgsize);
 
     return;
 }
@@ -114,9 +111,9 @@ void nodeloopops(member *node){
 		// sending a gossip message by selecting a random node which is not its own
 		int n=-1;
 		int randomNode=-1;
-	//	while ( ( (randomNode = rand() % EN_GPSZ ) == node->nodenumber) && (randomNode > node->memcount) && (memcmp(&node->addr,&node->memtable[randomNode].maddr,sizeof(address)))==0);
-		while(1){
 
+		// to select random node to send the gossip message
+		while(1){
 			randomNode = rand() % EN_GPSZ ;
 			if ( randomNode == node->nodenumber)
 				continue;
@@ -131,9 +128,9 @@ void nodeloopops(member *node){
 
 		}
 
-		// when you found the node to send , loop through ur mem listtable and update your lastupdatetime.
+		// when you found the node to send , loop through the  memberlisttable and update your lastupdatetime.
 		int i=0;
-		int isPresent=0;
+
 		for(i=0;i<node->memcount;i++){
 			printf("\n check time for %d",node->memtable[i].maddr.addr[0]);
 				// check if the mem table contains the node's address
@@ -142,7 +139,7 @@ void nodeloopops(member *node){
 					// update current time for ur node
 					printf("\nupdating the getcurrent time");
 					node->memtable[i].lastupdatetime=getcurrtime();
-					isPresent=1;
+
 				}else{
 					if ( getcurrtime() - node->memtable[i].lastupdatetime > T_CLEANUP  ){
 						if ( getcurrtime() - node->memtable[i].lastupdatetime < T_FAIL ) {
@@ -152,7 +149,7 @@ void nodeloopops(member *node){
 							if ( node->memtable[i].tocleanup != 2 ){
 								printf("\nTime to mark the node deleted %d",node->memtable[i].maddr.addr[0]);
 								node->memtable[i].tocleanup=2;
-								printf("\n remvoing node %d",node->memtable[i].maddr);
+
 								logNodeRemove(&node->addr,&node->memtable[i].maddr);
 							}
 						}
@@ -172,32 +169,11 @@ void nodeloopops(member *node){
 		temp=(struct address*) (msg+1);
 		memcpy(temp, &node->addr,sizeof(address));
 		src=(membershiplist *)(temp + 1);
-		// loop and do copy of memtable
-		//i=0;
 
-
-		//memcpy((char *)(src), &node->memtable,(node->memcount+1)*sizeof(membershiplist));
-
-		//i loop
 		for(i=0;i<node->memcount;i++){
 			memcpy(src, &node->memtable[i],sizeof(membershiplist));
 			src=src + 1;
 		}
-		//
-
-
-		messagehdr *memlist;
-		memlist=(messagehdr *) msg;
-		//printf("\n MESSAGE CONTSTRUCTED IS %d",msg->msgtype);
-		address *chkAdd=(address *) (msg+1);
-		//printf("\n ADDRESS IS  %d",chkAdd->addr[0]);
-
-		membershiplist *memdata;
-		memdata=(membershiplist *) (chkAdd + 1);
-
-		printf("\n*** SENDING GOSISP with size %d to %d",msgsize,node->memtable[randomNode].maddr.addr[0]);
-
-		//memcpy((membershiplist *)(msg+1), &node->memtable,node->memcount * sizeof(membershiplist));
     	MPp2psend(&node->addr, &node->memtable[randomNode].maddr, (char *)msg, msgsize);
 
 
@@ -212,25 +188,20 @@ void nodeloopops(member *node){
 
 void Process_gossipmsg(void *env, char *data, int size)
 {
-	// set fail bits
-	// update timestamp latest
-	// add to list new members
-	// add to list the sourceAddr if not present
-
-
+	// This process is called for every node when it receives a message of type GOSSIP
+	// once received, update the current time for its own entry in the member ship table
+	// Check for the data received ( a list of membership tables ) and then update its own node's membership table if the current time stamp is more for that specific node
 
 	member *node = (member *) env;
 	address *sourceAddr = (address *) data; // typecast to address to get address from data ( 6 bytes )
 	membershiplist *memdata=(membershiplist *) ( sourceAddr + 1 ); // memdata pointer to array of structs
 
 	printf("\n GOSSIP for node %d",node->addr.addr[0]);
-	int selfPresent=0;
-	int senderPresent=0;
 	int tablecount=(size - sizeof(address)) / sizeof(membershiplist);
 	printf("\nnumber of records received  : %d",tablecount);
 	printf("\nnumber of records in its mem table : %d",node->memcount);
 	int i=0;
-	int n=-1;
+
 	int j;
 	int nodepresentindata=-1;
 
@@ -261,13 +232,13 @@ void Process_gossipmsg(void *env, char *data, int size)
 						}
 					}
 				}
-				//break;
+
 			}
 		}
 
 		if ( nodepresentindata == 0  ){
 
-			 printf("\nNODE %d not present %d",memdata->maddr.addr[0]);
+
 			 memcpy(&node->memtable[node->memcount].maddr,&memdata->maddr,sizeof(address));
 			 node->memtable[node->memcount].lastupdatetime=getcurrtime();
 			 node->memtable[node->memcount].tocleanup=0;
@@ -290,9 +261,10 @@ Received a JOINREP (joinreply) message.
 */
 void Process_joinrep(void *env, char *data, int size)
 {
-	/* <your code goes in here> */
+
 	// reading the data received
-		
+	// This is called when the node receives membership table information from the initiator
+
     member *node = (member *) env;
     membershiplist *memdata = (membershiplist *)data; // typecast to membership table structure type
 
@@ -470,9 +442,8 @@ int introduceselftogroup(member *node, address *joinaddr){
 
     /* send JOINREQ message to introducer member. */
         MPp2psend(&node->addr, joinaddr, (char *)msg, msgsize);
-        // setting that node's ingroup status as 1 
+        // to increment unique node number count and assign to the newly formed node.
 		MEMCOUNT++;
-		//node->ingroup = 1;
 		node->nodenumber=MEMCOUNT;
 		
         free(msg);
@@ -510,7 +481,7 @@ void nodeloop(member *node){
     if (node->bfailed) return;
 
     checkmsgs(node);
-printf("\n<<<<<<<<   CHECK MESSAGE DONE ");
+    printf("\n<<<<<<<<   CHECK MESSAGE DONE ");
 
     /* Wait until you're in the group... */
     if(!node->ingroup) return ;

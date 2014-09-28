@@ -17,21 +17,21 @@
 #include "queue.h"
 #include "requests.h"
 #include "emulnet.h"
-#define MAX_NODES 100
+#define MAX_NODES 100 				// static max count of membership table
 
 /* Configuration Parameters */
 char JOINADDR[30];                    /* address for introduction into the group. */
 extern char *DEF_SERVADDR;            /* server address. */
-extern short PORTNUM;                /* standard portnum of server to contact. */
+extern short PORTNUM;                 /* standard portnum of server to contact. */
 
 /* Miscellaneous Parameters */
 extern char *STDSTRING;
 
 typedef struct membershiplist{            
-        struct address maddr;            // my address
-        int tocleanup;                    // boolean indiciating if this member is in the group
-        int lastupdatetime;                    // boolean indiciating if this member is in the group
-                            // boolean indiciating if this member is in the group
+        struct address maddr;             // node's address
+        int tocleanup;                    // boolean indiciating if this member is to be marked for deletion ( 1 ) or to be deleted ( 2 )
+        int lastupdatetime;               // Here the lastupdatetime saves the snapshot itself is the heartbeat in this solution.
+
 } membershiplist;
 typedef struct member{            
         struct address addr;            // my address
@@ -39,8 +39,8 @@ typedef struct member{
         int ingroup;                    // boolean indiciating if this member is in the group
         queue inmsgq;                   // queue for incoming messages
         int bfailed;                    // boolean indicating if this member has failed
-        int nodenumber;     // boolean indicating if this member has failed
-        int memcount;		// count of members in its membership table
+        int nodenumber;     			// This saves the unique node number
+        int memcount;					// count of members in its membership table
 		membershiplist memtable[MAX_NODES];
 } member;
 
