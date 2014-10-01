@@ -30,7 +30,8 @@ extern char *STDSTRING;
 typedef struct membershiplist{            
         struct address maddr;             // node's address
         int tocleanup;                    // boolean indiciating if this member is to be marked for deletion ( 1 ) or to be deleted ( 2 )
-        int lastupdatetime;               // Here the lastupdatetime saves the snapshot itself is the heartbeat in this solution.
+        int lastupdatetime;               // Here the lastupdatetime saves the snapshot.
+        int heartbeatCounter;			  //  Heartbeat counter
 
 } membershiplist;
 typedef struct member{            

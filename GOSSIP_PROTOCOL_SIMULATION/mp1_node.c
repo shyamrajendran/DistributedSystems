@@ -71,6 +71,7 @@ void Process_joinreq(void *env, char *data, int size)
 	// update the membership table
 
 	node->memtable[node->memcount].lastupdatetime=getcurrtime();
+	node->memtable[node->memcount].heartbeatCounter++;
 	memcpy(&node->memtable[node->memcount].maddr,destaddr,sizeof(address));
 	node->memcount++;
 
@@ -138,11 +139,14 @@ void nodeloopops(member *node){
 				if ( n == 0 ){
 					// update current time for ur node
 					printf("\nupdating the getcurrent time");
+					// check ur heartbeat and update
+					//if ( node->memtable[i].heartbeatCounter < node-)
 					node->memtable[i].lastupdatetime=getcurrtime();
+					node->memtable[i].heartbeatCounter++;
 
 				}else{
-					if ( getcurrtime() - node->memtable[i].lastupdatetime > T_CLEANUP  ){
-						if ( getcurrtime() - node->memtable[i].lastupdatetime < T_FAIL ) {
+					if ( (getcurrtime() - node->memtable[i].heartbeatCounter) > T_CLEANUP  /*getcurrtime() - node->memtable[i].lastupdatetime > T_CLEANUP  */){
+						if ( ( getcurrtime() - node->memtable[i].heartbeatCounter ) < T_FAIL /* getcurrtime() - node->memtable[i].lastupdatetime < T_FAIL */ ) {
 							printf("\nTime to set del bit for node %d",node->memtable[i].maddr.addr[0]);
 							node->memtable[i].tocleanup=1;
 						} else {
@@ -213,22 +217,27 @@ void Process_gossipmsg(void *env, char *data, int size)
 
 			if(memcmp(&node->memtable[j].maddr,&memdata->maddr,sizeof(address)) == 0 ){
 
-				//check if the node's memtable contains the sender's address
+	     		//check if the node's memtable contains the sender's address
 				nodepresentindata=1;
 				//check if latest update time for this member
-				if (node->memtable[j].lastupdatetime < memdata->lastupdatetime){
+				if ( (getcurrtime() - node->memtable[j].lastupdatetime ) < T_CLEANUP /*node->memtable[j].lastupdatetime < memdata->lastupdatetime*/){
 					printf("\n UPDATING TIME FOR %d",memdata->maddr.addr[0]);
-					node->memtable[j].lastupdatetime = memdata->lastupdatetime;
+					//if less check if ur heartbeat is less or more if more modify
+					//if ( node->memtable[j].heartbeatCounter < )
+					if ( node->memtable[j].heartbeatCounter < memdata->heartbeatCounter ){
+						node->memtable[j].heartbeatCounter=memdata->heartbeatCounter;
+						node->memtable[j].lastupdatetime = getcurrtime();
+					}
 				}
 
-				if ((getcurrtime()-node->memtable[j].lastupdatetime) > T_CLEANUP ){
-					if (getcurrtime() - memdata->lastupdatetime < T_FAIL ){
+				if (  (getcurrtime() - node->memtable[j].lastupdatetime ) > T_CLEANUP   /*(getcurrtime()-node->memtable[j].lastupdatetime) > T_CLEANUP*/ ){
+					if ( (getcurrtime() - node->memtable[j].lastupdatetime )  < T_FAIL /*getcurrtime() - memdata->lastupdatetime < T_FAIL */ ){
 						node->memtable[j].tocleanup=1;
 					} else {
 						if ( node->memtable[j].tocleanup != 2){
 							node->memtable[j].tocleanup=2;
 							printf("\n REMOVING NODE %d",memdata->maddr.addr[0]);
-							logNodeRemove(&node->addr,&node->memtable[i].maddr);
+							logNodeRemove(&node->addr,&node->memtable[j].maddr);
 						}
 					}
 				}
@@ -240,8 +249,9 @@ void Process_gossipmsg(void *env, char *data, int size)
 
 
 			 memcpy(&node->memtable[node->memcount].maddr,&memdata->maddr,sizeof(address));
-			 node->memtable[node->memcount].lastupdatetime=getcurrtime();
-			 node->memtable[node->memcount].tocleanup=0;
+			 node->memtable[node->memcount].lastupdatetime=memdata->lastupdatetime;
+			 node->memtable[node->memcount].tocleanup=memdata->tocleanup;
+			 node->memtable[node->memcount].heartbeatCounter=memdata->heartbeatCounter;
 			 printf("\nADDING NODE %d",memdata->maddr.addr[0]);
 			 logNodeAdd(&node->addr,&memdata->maddr);
 			 printf("\nADDING into mem table  node %d",memdata->maddr.addr[0]);
@@ -282,6 +292,7 @@ void Process_joinrep(void *env, char *data, int size)
 		//;
 		node->memtable[i].tocleanup=memdata->tocleanup;
 		node->memtable[i].lastupdatetime=memdata->lastupdatetime;
+		node->memtable[i].heartbeatCounter=memdata->heartbeatCounter;
 
 		printf("\nAdding node %d into %d s table",memdata->maddr.addr[0],node->addr.addr[0]);
 		logNodeAdd(&node->addr,&memdata->maddr);
@@ -299,6 +310,7 @@ void Process_joinrep(void *env, char *data, int size)
 		memcpy(&node->memtable[i].maddr,&node->addr,sizeof(address));
 		node->memtable[i].lastupdatetime=getcurrtime();
 		node->memtable[i].tocleanup=0;
+		node->memtable[i].heartbeatCounter++;
 		node->memcount++;
 		logNodeAdd(&node->addr,&node->addr);
 	}
@@ -420,6 +432,7 @@ int introduceselftogroup(member *node, address *joinaddr){
 		node->memtable[node->nodenumber].lastupdatetime=getcurrtime();
 		memcpy(&node->memtable[node->nodenumber].maddr,&node->addr,sizeof(address));
 		node->memtable[node->nodenumber].tocleanup=0;
+		node->memtable[node->nodenumber].heartbeatCounter++;
 		node->memcount=1;
 
 

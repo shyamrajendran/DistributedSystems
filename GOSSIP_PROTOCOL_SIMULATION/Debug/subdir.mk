@@ -3,14 +3,6 @@
 ################################################################################
 
 # Add inputs and outputs from these tool invocations to the build variables 
-O_SRCS += \
-../app.o \
-../emulnet.o \
-../log.o \
-../mp1_node.o \
-../params.o \
-../queue.o 
-
 C_SRCS += \
 ../app.c \
 ../emulnet.c \
